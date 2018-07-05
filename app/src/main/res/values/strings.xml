@@ -2,5 +2,11 @@
     <string name="app_name">Kanema</string>
 
     <string name="movie_layout_content_description">Movie Poster</string>
-    <string name="movie_layout_placeholder_text">No movie title</string>
+    <string name="movie_layout_movie_title">No movie title</string>
+    <string name="movie_layout_movie_date">Movie date</string>
+
+
+    <string name="actor_layout_content_description">Actor Profile</string>
+    <string name="actor_layout_actor_name">Actor Name</string>
+    <string name="actor_layout_actor_character">Actor Character being played</string>
 </resources>

@@ -6,31 +6,54 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentViewHolder> {
 
     private ArrayList<Movie> movies;
+    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
+    private OnClickListener onListClickItem;
 
-    public class ContentViewHolder extends RecyclerView.ViewHolder {
+    public interface OnClickListener {
+        void onListClickItem(int itemPosition);
+    }
 
-        ImageView imageView;
-        TextView textView;
+    public class ContentViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+
+        ImageView imageViewPoster;
+        TextView textViewTitle;
+        RatingBar ratingBarVote;
+        TextView textViewReleaseDate;
 
         public ContentViewHolder(@NonNull View itemView) {
             super(itemView);
 
-            imageView = itemView.findViewById(R.id.movie_poster);
-            textView = itemView.findViewById(R.id.movie_title);
+            itemView.setOnClickListener(this);
+
+            imageViewPoster = itemView.findViewById(R.id.movie_poster);
+            textViewTitle = itemView.findViewById(R.id.movie_title);
+            ratingBarVote = itemView.findViewById(R.id.movie_rating);
+            ratingBarVote.setNumStars(5);
+
+            textViewReleaseDate = itemView.findViewById(R.id.movie_date);
+        }
+
+        @Override
+        public void onClick(View view) {
+            int position = getAdapterPosition();
+            onListClickItem.onListClickItem(position);
         }
     }
 
-    public ContentAdapter(ArrayList<Movie> movies) {
+    public ContentAdapter(ArrayList<Movie> movies, OnClickListener onListClickItem) {
         this.movies = movies;
+        this.onListClickItem = onListClickItem;
     }
 
     @NonNull
@@ -48,12 +71,13 @@ public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentV
         Movie movie = movies.get(position);
 
         Glide
-                .with(holder.imageView.getContext())
+                .with(holder.imageViewPoster.getContext())
                 .load(movie.getPosterPath())
-                .into(holder.imageView);
+                .into(holder.imageViewPoster);
 
-        holder.textView.setText(movie.getTitle());
-        holder.textView.setText(movie.getOverview());
+        holder.textViewTitle.setText(movie.getTitle());
+        holder.ratingBarVote.setRating(movie.getVoteAverage()/2.0f);
+        holder.textViewReleaseDate.setText(simpleDateFormat.format(movie.getReleaseDate()));
     }
 
     @Override
