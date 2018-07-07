@@ -9,4 +9,11 @@
     <string name="actor_layout_content_description">Actor Profile</string>
     <string name="actor_layout_actor_name">Actor Name</string>
     <string name="actor_layout_actor_character">Actor Character being played</string>
+
+    <string name="view_space_placeholder">View space placeholder</string>
+
+
+    <!-- Menu -->
+    <string name="menu_item_popularity">Sort by popularity</string>
+    <string name="menu_item_rating">Sort by rating</string>
 </resources>

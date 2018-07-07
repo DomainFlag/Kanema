@@ -11,6 +11,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 
 public class ResponseParser {
 
@@ -19,8 +20,12 @@ public class ResponseParser {
     public ResponseParser() {}
 
     public ArrayList<Movie> parseMovieList(StringBuilder data) {
-        String dataString = data.toString();
         ArrayList<Movie> movies = new ArrayList<>();
+
+        if(data == null)
+            return movies;
+
+        String dataString = data.toString();
 
         if(dataString.isEmpty())
             return movies;
@@ -29,7 +34,7 @@ public class ResponseParser {
             JSONObject jsonObject = new JSONObject(dataString);
             JSONArray jsonArray = jsonObject.optJSONArray("results");
 
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
 
             for(int it = 0; it < jsonArray.length(); it++) {
                 JSONObject jsonMovieObject = jsonArray.optJSONObject(it);
@@ -91,5 +96,42 @@ public class ResponseParser {
         }
 
         return actors;
+    }
+
+    public Movie parseMovieDetails(StringBuilder data) {
+        if(data == null)
+            return null;
+
+        String dataString = data.toString();
+
+        if(dataString.isEmpty())
+            return null;
+
+        try {
+            JSONObject jsonObject = new JSONObject(dataString);
+            String posterPath = "http://image.tmdb.org/t/p/w185/" + jsonObject.optString("poster_path");
+
+            JSONArray jsonGenresArray = jsonObject.optJSONArray("genres");
+            ArrayList<String> genres = new ArrayList<>();
+            for(int it = 0; it < jsonGenresArray.length(); it++) {
+                genres.add(jsonGenresArray.optJSONObject(it).optString("name"));
+            }
+
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            Date releaseDate = simpleDateFormat.parse(jsonObject.optString("release_date"));
+            String tagline = "(" + jsonObject.optString("tagline") + ")";
+
+            String title = jsonObject.optString("original_title");
+            String overview = jsonObject.optString("overview");
+            Float voteAverage = Float.parseFloat(jsonObject.optString("vote_average")) / 2.0f;
+
+            return new Movie(title, posterPath, overview, voteAverage, releaseDate, genres, tagline);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }

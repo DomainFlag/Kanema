@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color type="attr" name="colorPrimary">#FF5722</color>
-    <color type="attr" name="colorPrimaryDark">#E64A19</color>
+    <color type="attr" name="colorPrimary">#c64015</color>
+    <color type="attr" name="colorPrimaryDark">#a33411</color>
     <color type="attr" name="colorPrimaryLight">#FFCCBC</color>
     <color type="attr" name="colorAccent">#FFEB3B</color>
     <color type="attr" name="colorPrimaryText">#212121</color>

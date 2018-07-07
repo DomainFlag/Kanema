@@ -13,11 +13,12 @@ import com.bumptech.glide.Glide;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class ContentAdapter extends RecyclerView.Adapter<ContentAdapter.ContentViewHolder> {
 
     private ArrayList<Movie> movies;
-    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
+    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd", Locale.US);
     private OnClickListener onListClickItem;
 
     public interface OnClickListener {
