@@ -11,11 +11,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.cchiv.kanema.utils.Constants;
 import com.example.cchiv.kanema.utils.HTTPFetchRequest;
 import com.example.cchiv.kanema.utils.RecyclerViewMargin;
@@ -112,7 +114,7 @@ public class DetailedActivity extends AppCompatActivity {
         }
     }
 
-    public static class AsyncRequest extends AsyncTask<URL, Void, Void> {
+    public static class AsyncRequest extends AsyncTask<URL, Void, Boolean> {
 
         private WeakReference<Context> context;
 
@@ -157,7 +159,7 @@ public class DetailedActivity extends AppCompatActivity {
 
 
         @Override
-        protected Void doInBackground(URL... urls) {
+        protected Boolean doInBackground(URL... urls) {
             if(urls.length == 0)
                 return null;
 
@@ -169,34 +171,61 @@ public class DetailedActivity extends AppCompatActivity {
             if(this.fetchType == FETCH_ACTORS) {
                 ArrayList<Actor> fetchedActors = responseParser.parseActorList(result);
 
-                this.actors.clear();
-                this.actors.addAll(fetchedActors);
+                if(fetchedActors.size() != 0) {
+                    this.actors.clear();
+                    this.actors.addAll(fetchedActors);
+
+                    return true;
+                }
             } else {
-                this.movie.copy(responseParser.parseMovieDetails(result));
+                Movie newMovie = responseParser.parseMovieDetails(result);
+
+                if(newMovie != null) {
+                    this.movie.copy(newMovie);
+
+                    return true;
+                }
             }
 
-            return null;
+            return false;
         }
 
         @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
+        protected void onPostExecute(Boolean wasUpdated) {
+            super.onPostExecute(wasUpdated);
+
+            Activity activity = (Activity) this.context.get();
+            RatingBar ratingBar = activity.findViewById(R.id.movie_detailed_rating);
+
+            /* In case the data wasn't updated no need to go further */
+            if(!wasUpdated) {
+                Glide
+                        .with(this.context.get())
+                        .load(R.drawable.empty_package)
+                        .into((ImageView) activity.findViewById(R.id.movie_detailed_poster));
+
+                ratingBar.setVisibility(View.GONE);
+
+                return;
+            }
 
             if(this.fetchType != FETCH_ACTORS && this.fetchType != FETCH_MOVIE_DETAILS)
                 return;
 
             if(this.fetchType == FETCH_MOVIE_DETAILS) {
                 if(this.context != null) {
-                    Activity activity = (Activity) this.context.get();
-
-                    Glide.with(this.context.get())
+                    Glide
+                            .with(this.context.get())
                             .load(this.movie.getPosterPath())
+                            .apply(new RequestOptions()
+                                .placeholder(R.drawable.empty_package)
+                                .error(R.drawable.empty_package))
                             .into((ImageView) activity.findViewById(R.id.movie_detailed_poster));
 
-                    RatingBar ratingBar = activity.findViewById(R.id.movie_detailed_rating);
                     ratingBar.setNumStars(5);
                     ratingBar.setMax(5);
                     ratingBar.setRating(this.movie.getVoteAverage());
+                    ratingBar.setVisibility(View.VISIBLE);
 
                     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
                     TextView textView = activity.findViewById(R.id.movie_detailed_release_date);

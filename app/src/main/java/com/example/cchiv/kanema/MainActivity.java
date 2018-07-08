@@ -8,7 +8,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -25,9 +25,12 @@ import java.util.ArrayList;
 
 public class  MainActivity extends AppCompatActivity {
 
-    private ContentAdapter contentAdapter;
+    private final static int nbMovieCols = 2;
 
+    private ContentAdapter contentAdapter;
     private ArrayList<Movie> movies;
+
+    private int currentOrientation = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,8 +42,8 @@ public class  MainActivity extends AppCompatActivity {
         recyclerView.setHasFixedSize(true);
         recyclerView.addItemDecoration(itemDecoration);
 
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
-        recyclerView.setLayoutManager(linearLayoutManager);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, nbMovieCols, GridLayoutManager.VERTICAL, false);
+        recyclerView.setLayoutManager(gridLayoutManager);
 
         movies = new ArrayList<>();
         contentAdapter = new ContentAdapter(movies, new ContentAdapter.OnClickListener() {
