@@ -2,71 +2,91 @@ package com.example.cchiv.kanema;
 
 import android.content.Context;
 import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.net.Uri;
-import android.os.AsyncTask;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
+import android.preference.PreferenceManager;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.Toast;
 
-import com.example.cchiv.kanema.utils.Constants;
-import com.example.cchiv.kanema.utils.HTTPFetchRequest;
-import com.example.cchiv.kanema.utils.RecyclerViewMargin;
-import com.example.cchiv.kanema.utils.ResponseParser;
+import java.util.Arrays;
+import java.util.List;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
+public class MainActivity extends FragmentActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
-public class  MainActivity extends AppCompatActivity {
-
-    private final static int nbMovieCols = 2;
-
-    private ContentAdapter contentAdapter;
-    private ArrayList<Movie> movies;
-
-    private int currentOrientation = 1;
+    private final static int mNbComponents = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final RecyclerView recyclerView = findViewById(R.id.movie_list);
-        RecyclerView.ItemDecoration itemDecoration = new RecyclerViewMargin((int) getResources().getDimension(R.dimen.activity_margin_component));
-        recyclerView.setHasFixedSize(true);
-        recyclerView.addItemDecoration(itemDecoration);
+        ViewPager mViewPager = (ViewPager) findViewById(R.id.viewpager_slider);
+        SliderPageAdapter mPagerAdapter = new SliderPageAdapter(this, getSupportFragmentManager());
+        mViewPager.setAdapter(mPagerAdapter);
 
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, nbMovieCols, GridLayoutManager.VERTICAL, false);
-        recyclerView.setLayoutManager(gridLayoutManager);
-
-        movies = new ArrayList<>();
-        contentAdapter = new ContentAdapter(movies, new ContentAdapter.OnClickListener() {
-            @Override
-            public void onListClickItem(int itemPosition) {
-                Intent intent = new Intent(MainActivity.this, DetailedActivity.class);
-                intent.putExtra("id", movies.get(itemPosition).getID());
-                startActivity(intent);
-            }
-        });
-
-        recyclerView.setAdapter(contentAdapter);
-
-        fetchMovies(Constants.FILTER_BY_RATING);
+        setViewPagerPreferences(mViewPager);
+        setSharedPreferences();
     }
 
-    private boolean isThereNetwork() {
-        ConnectivityManager connectivityManager
-                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+    public void setViewPagerPreferences(ViewPager mViewPager) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String entertainment_type = sharedPreferences.getString(getString(R.string.entertainment_key), getString(R.string.entertainment_movies));
 
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        String[] labels = getResources().getStringArray(R.array.settings_item_keys);
+        int index = Arrays.asList(labels).indexOf(entertainment_type);
 
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+        mViewPager.setCurrentItem(index);
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
+
+    }
+
+    public class SliderPageAdapter extends FragmentPagerAdapter {
+
+        private List<String> components;
+        private Context context;
+
+        public SliderPageAdapter(Context context, FragmentManager fm) {
+            super(fm);
+
+            this.context = context;
+
+            String[] data = this.context.getResources().getStringArray(R.array.settings_item_labels);
+            this.components = Arrays.asList(data);
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+            Fragment fragment = new SlidePageFragment();
+
+            Bundle bundle = new Bundle();
+            bundle.putString(getString(R.string.entertainment_key), this.components.get(position));
+
+            fragment.setArguments(bundle);
+            return fragment;
+        }
+
+        @Override
+        public int getCount() {
+            return mNbComponents;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPreferences.unregisterOnSharedPreferenceChangeListener(this);
     }
 
     @Override
@@ -80,75 +100,20 @@ public class  MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if(item.getItemId() == R.id.menu_item_popularity) {
-            fetchMovies(Constants.FILTER_BY_POPULARITY);
+//            fetchMovies(Constants.FILTER_BY_POPULARITY);
         } else if(item.getItemId() == R.id.menu_item_rating) {
-            fetchMovies(Constants.FILTER_BY_RATING);
+//            fetchMovies(Constants.FILTER_BY_RATING);
+        } else if(item.getItemId() == R.id.menu_settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
         }
 
         return super.onOptionsItemSelected(item);
     }
 
-    public void fetchMovies(String filterBy) {
-        if(!isThereNetwork())
-            return;
 
-        Uri.Builder builder = new Uri.Builder();
-        Uri uri = builder
-                .scheme(Constants.SCHEME)
-                .authority(Constants.AUTHORITY)
-                .appendPath(Constants.PATH_API)
-                .appendPath(Constants.MOVIE)
-                .appendPath(filterBy)
-                .appendQueryParameter(Constants.API_KEY, Constants.API_KEY_VALUE)
-                .appendQueryParameter(Constants.LANGUAGE, Constants.LANGUAGE_VALUE)
-                .build();
-
-        try {
-            HTTPAsyncFetch httpAsyncFetch = new HTTPAsyncFetch(
-                    new URL(uri.toString()),
-                    this.contentAdapter);
-
-            httpAsyncFetch.execute();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private class HTTPAsyncFetch extends AsyncTask<Void, Void, Void> {
-
-        private HTTPFetchRequest httpFetchRequest;
-        private URL url;
-        private ContentAdapter contentAdapter;
-
-        public HTTPAsyncFetch(URL url, ContentAdapter contentAdapter) {
-            super();
-
-            this.url = url;
-            this.contentAdapter = contentAdapter;
-            this.httpFetchRequest = new HTTPFetchRequest();
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            StringBuilder stringBuilder = this.httpFetchRequest.fetchFromURL(this.url);
-
-            ResponseParser responseParser = new ResponseParser();
-            movies.clear();
-            movies.addAll(responseParser.parseMovieList(stringBuilder));
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void none) {
-            super.onPostExecute(none);
-
-            this.contentAdapter.notifyDataSetChanged();
-        }
+    public void setSharedPreferences() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPreferences.registerOnSharedPreferenceChangeListener(this);
     }
 }

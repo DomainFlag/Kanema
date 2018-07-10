@@ -16,4 +16,16 @@
     <!-- Menu -->
     <string name="menu_item_popularity">Sort by popularity</string>
     <string name="menu_item_rating">Sort by rating</string>
+    <string name="menu_settings">Settings</string>
+
+    <!-- ListPreference Entertainment -->
+    <string name="entertainment_label">Entertainment Type</string>
+    <string name="entertainment_key">entertainment_type</string>
+
+    <string name="entertainment_movies">Movies</string>
+    <string name="entertainment_series">TV Series</string>
+
+    <string name="entertainment_movies_key">movie</string>
+    <string name="entertainment_series_key">tv_series</string>
+
 </resources>

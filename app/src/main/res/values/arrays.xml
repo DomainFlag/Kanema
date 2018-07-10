@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="settings_item_labels">
+        <item>@string/entertainment_movies</item>
+        <item>@string/entertainment_series</item>
+    </array>
+    <array name="settings_item_keys">
+        <item>@string/entertainment_movies_key</item>
+        <item>@string/entertainment_series_key</item>
+    </array>
+</resources>

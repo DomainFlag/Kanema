@@ -11,6 +11,7 @@ public class Constants {
     public final static String LANGUAGE_VALUE = "en-US";
 
     public final static String MOVIE = "movie";
+    public final static String TV = "tv";
     public final static String CREDITS = "credits";
 
     public final static String FILTER_BY_POPULARITY = "popular";

@@ -39,12 +39,20 @@ public class ResponseParser {
             for(int it = 0; it < jsonArray.length(); it++) {
                 JSONObject jsonMovieObject = jsonArray.optJSONObject(it);
                 int movieID = jsonMovieObject.optInt("id");
+
                 String movieTitle = jsonMovieObject.optString("title");
+                if(movieTitle.isEmpty())
+                    movieTitle = jsonMovieObject.optString("name");
+
                 String moviePosterPath = "http://image.tmdb.org/t/p/w185/" + jsonMovieObject.optString("poster_path");
                 String overview = jsonMovieObject.optString("overview");
                 Float voteAverage = (float) jsonMovieObject.optDouble("vote_average");
 
-                Date releaseDate = simpleDateFormat.parse(jsonMovieObject.optString("release_date"));
+                String release_date = jsonMovieObject.optString("release_date");
+                if(release_date.isEmpty())
+                    release_date = jsonMovieObject.optString("first_air_date");
+
+                Date releaseDate = simpleDateFormat.parse(release_date);
 
                 Movie movie = new Movie(movieID, movieTitle, moviePosterPath, overview, voteAverage, releaseDate);
 
