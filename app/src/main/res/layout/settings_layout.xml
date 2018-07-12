@@ -4,4 +4,4 @@
     android:id="@+id/activity_settings"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:name="com.example.cchiv.kanema.SettingsFragment"/>
+    android:name="com.example.cchiv.kanema.fragments.SettingsFragment"/>

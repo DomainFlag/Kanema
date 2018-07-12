@@ -24,8 +24,10 @@
 
     <string name="entertainment_movies">Movies</string>
     <string name="entertainment_series">TV Series</string>
+    <string name="entertainment_starred">Starred</string>
 
     <string name="entertainment_movies_key">movie</string>
     <string name="entertainment_series_key">tv_series</string>
+    <string name="entertainment_starred_key">starred</string>
 
 </resources>

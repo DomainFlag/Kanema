@@ -1,7 +1,8 @@
-package com.example.cchiv.kanema;
+package com.example.cchiv.kanema.fragments;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -10,12 +11,22 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.example.cchiv.kanema.DetailedActivity;
+import com.example.cchiv.kanema.Movie;
+import com.example.cchiv.kanema.R;
+import com.example.cchiv.kanema.SettingsActivity;
+import com.example.cchiv.kanema.adapters.ContentAdapter;
+import com.example.cchiv.kanema.data.MovieContract.MovieEntry;
 import com.example.cchiv.kanema.utils.Constants;
 import com.example.cchiv.kanema.utils.HTTPFetchRequest;
 import com.example.cchiv.kanema.utils.RecyclerViewMargin;
@@ -25,11 +36,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
-public class SlidePageFragment extends Fragment {
+public class SlidePageFragment extends Fragment implements LoaderCallbacks<Cursor> {
 
-    private final static int nbMovieCols = 2;
-
+    private final static int mNbComponentsCols = 2;
     private Context context;
+    private Cursor cursor;
 
     private ContentAdapter contentAdapter;
     private ArrayList<Movie> movies;
@@ -50,25 +61,40 @@ public class SlidePageFragment extends Fragment {
         recyclerView.setHasFixedSize(true);
         recyclerView.addItemDecoration(itemDecoration);
 
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(this.context, nbMovieCols, GridLayoutManager.VERTICAL, false);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this.context, mNbComponentsCols, GridLayoutManager.VERTICAL, false);
         recyclerView.setLayoutManager(gridLayoutManager);
 
         movies = new ArrayList<>();
-        contentAdapter = new ContentAdapter(movies, new ContentAdapter.OnClickListener() {
+        contentAdapter = new ContentAdapter(this.context, movies, new ContentAdapter.OnClickListener
+                () {
             @Override
             public void onListClickItem(int itemPosition) {
                 Intent intent = new Intent(container.getContext(), DetailedActivity.class);
                 intent.putExtra("id", movies.get(itemPosition).getID());
+                intent.putExtra("title", movies.get(itemPosition).getTitle());
                 startActivity(intent);
             }
         });
 
         recyclerView.setAdapter(contentAdapter);
-
         fetchMovies(Constants.FILTER_BY_RATING);
-
         return view;
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if(item.getItemId() == R.id.menu_item_popularity) {
+            fetchMovies(Constants.FILTER_BY_POPULARITY);
+        } else if(item.getItemId() == R.id.menu_item_rating) {
+            fetchMovies(Constants.FILTER_BY_RATING);
+        } else if(item.getItemId() == R.id.menu_settings) {
+            Intent intent = new Intent(this.context, SettingsActivity.class);
+            startActivity(intent);
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
 
     private boolean isThereNetwork() {
         ConnectivityManager connectivityManager
@@ -89,7 +115,13 @@ public class SlidePageFragment extends Fragment {
         String search_by;
         if(value.equals(getString(R.string.entertainment_movies)))
             search_by = Constants.MOVIE;
-        else search_by = Constants.TV;
+        else if(value.equals(getString(R.string.entertainment_series)))
+            search_by = Constants.TV;
+        else {
+            fetchStarred();
+
+            return;
+        }
 
         Uri.Builder builder = new Uri.Builder();
         Uri uri = builder
@@ -111,6 +143,40 @@ public class SlidePageFragment extends Fragment {
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
+    }
+
+    public void fetchStarred() {
+        getLoaderManager().initLoader(1, null, this);
+    }
+
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        String[] projection = {
+                MovieEntry._ID,
+                MovieEntry.COL_MOVIE_TITLE,
+                MovieEntry.COL_MOVIE_POSTER_PATH,
+                MovieEntry.COL_MOVIE_OVERVIEW,
+                MovieEntry.COL_MOVIE_VOTE_AVERAGE,
+                MovieEntry.COL_MOVIE_RELEASE_DATE,
+                MovieEntry.COL_MOVIE_GENRES,
+                MovieEntry.COL_MOVIE_TAGLINE
+        };
+
+        return new CursorLoader(this.context, Uri.parse("content://com.example.android" +
+                ".KanemaProvider"), projection, null, null, null);
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
+        contentAdapter.swapCursor(data);
+        contentAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        contentAdapter.swapCursor(null);
+        contentAdapter.notifyDataSetChanged();
     }
 
     private class HTTPAsyncFetch extends AsyncTask<Void, Void, Void> {

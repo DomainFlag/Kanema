@@ -19,7 +19,13 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity android:name=".DetailedActivity" android:configChanges="orientation|screenSize"/>
+        <activity
+            android:name=".DetailedActivity"
+            android:label="@string/menu_settings"
+            android:configChanges="orientation|screenSize"
+            android:parentActivityName=".MainActivity">
+
+        </activity>
         <activity
             android:name=".SettingsActivity"
             android:label="@string/menu_settings"
@@ -29,6 +35,11 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity"/>
         </activity>
+
+        <provider
+            android:authorities="com.example.android.KanemaProvider"
+            android:name=".data.KanemaProvider"
+            android:exported="false"/>
 
     </application>
 

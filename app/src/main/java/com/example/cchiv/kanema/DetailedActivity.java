@@ -1,23 +1,29 @@
 package com.example.cchiv.kanema;
 
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.example.cchiv.kanema.adapters.MovieDetailsAdapter;
+import com.example.cchiv.kanema.data.MovieContract.MovieEntry;
 import com.example.cchiv.kanema.utils.Constants;
 import com.example.cchiv.kanema.utils.HTTPFetchRequest;
 import com.example.cchiv.kanema.utils.RecyclerViewMargin;
@@ -35,7 +41,7 @@ public class DetailedActivity extends AppCompatActivity {
     private final static int FETCH_ACTORS = 0;
     private final static int FETCH_MOVIE_DETAILS = 1;
 
-    private Movie movie = new Movie();
+    private final Movie movie = new Movie();
     private ArrayList<Actor> actors = new ArrayList<>();
     private MovieDetailsAdapter movieDetailsAdapter;
 
@@ -44,7 +50,9 @@ public class DetailedActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.movie_detailed_layout);
 
-        Intent intent = getIntent();
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         RecyclerView recyclerView = findViewById(R.id.actor_list);
         recyclerView.setHasFixedSize(false);
@@ -57,15 +65,46 @@ public class DetailedActivity extends AppCompatActivity {
         movieDetailsAdapter = new MovieDetailsAdapter(actors, movie, new MovieDetailsAdapter.OnClickActorListener() {
             @Override
             public void OnClickListener(int actorPosition) {
-
+                Toast.makeText(getParent().getBaseContext(), "---------------------", Toast
+                        .LENGTH_LONG).show();
             }
         }, 1);
         recyclerView.setAdapter(movieDetailsAdapter);
 
+
+        Intent intent = getIntent();
+
         String movieIdentifier = String.valueOf(intent.getIntExtra("id", 0));
+        setTitle(intent.getStringExtra("title"));
 
         fetchActors(movieIdentifier);
         fetchMovieDetails(movieIdentifier);
+    }
+
+    public void onClick(View view) {
+        ImageView imageView = (ImageView) findViewById(R.id.star_content);
+
+        if(movie.getInitialized() != 0) {
+            imageView.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R
+                    .drawable.ic_star));
+
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-mm-dd", Locale.US);
+
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(MovieEntry._ID, movie.getID());
+            contentValues.put(MovieEntry.COL_MOVIE_TITLE, movie.getTitle());
+            contentValues.put(MovieEntry.COL_MOVIE_GENRES,
+                    TextUtils.join(" ", movie.getGenres()));
+            contentValues.put(MovieEntry.COL_MOVIE_OVERVIEW, movie.getOverview());
+            contentValues.put(MovieEntry.COL_MOVIE_POSTER_PATH, movie.getPosterPath());
+            contentValues.put(MovieEntry.COL_MOVIE_RELEASE_DATE,
+                    simpleDateFormat.format(movie.getReleaseDate()));
+            contentValues.put(MovieEntry.COL_MOVIE_TAGLINE, movie.getTagline());
+            contentValues.put(MovieEntry.COL_MOVIE_VOTE_AVERAGE, movie.getVoteAverage());
+
+            getContentResolver().insert(Uri.parse("content://com.example.android" +
+                    ".KanemaProvider"), contentValues);
+        }
     }
 
     public void fetchActors(String movieIdentifier) {

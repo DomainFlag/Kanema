@@ -1,10 +1,11 @@
 package com.example.cchiv.kanema;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
@@ -12,8 +13,8 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.widget.Toast;
+
+import com.example.cchiv.kanema.fragments.SlidePageFragment;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,6 +31,18 @@ public class MainActivity extends FragmentActivity implements SharedPreferences.
         ViewPager mViewPager = (ViewPager) findViewById(R.id.viewpager_slider);
         SliderPageAdapter mPagerAdapter = new SliderPageAdapter(this, getSupportFragmentManager());
         mViewPager.setAdapter(mPagerAdapter);
+
+        TabLayout tabLayout = findViewById(R.id.entertainment_tab_layout);
+        tabLayout.setupWithViewPager(mViewPager);
+        for(int it = 0; it < tabLayout.getTabCount(); it++) {
+            TabLayout.Tab tab = tabLayout.getTabAt(it);
+
+            if(it == 0)
+                tab.setIcon(R.drawable.ic_movie);
+            else if(it == 1)
+                tab.setIcon(R.drawable.ic_series);
+            else tab.setIcon(R.drawable.ic_movie);
+        }
 
         setViewPagerPreferences(mViewPager);
         setSharedPreferences();
@@ -79,6 +92,14 @@ public class MainActivity extends FragmentActivity implements SharedPreferences.
         public int getCount() {
             return mNbComponents;
         }
+
+        @Nullable
+        @Override
+        public CharSequence getPageTitle(int position) {
+            if(position == 0)
+                return getResources().getString(R.string.entertainment_movies);
+            else return getResources().getString(R.string.entertainment_series);
+        }
     }
 
     @Override
@@ -96,21 +117,6 @@ public class MainActivity extends FragmentActivity implements SharedPreferences.
 
         return true;
     }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if(item.getItemId() == R.id.menu_item_popularity) {
-//            fetchMovies(Constants.FILTER_BY_POPULARITY);
-        } else if(item.getItemId() == R.id.menu_item_rating) {
-//            fetchMovies(Constants.FILTER_BY_RATING);
-        } else if(item.getItemId() == R.id.menu_settings) {
-            Intent intent = new Intent(this, SettingsActivity.class);
-            startActivity(intent);
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
 
     public void setSharedPreferences() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);

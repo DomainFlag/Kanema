@@ -1,4 +1,4 @@
-package com.example.cchiv.kanema;
+package com.example.cchiv.kanema.adapters;
 
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
@@ -9,6 +9,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.example.cchiv.kanema.Actor;
+import com.example.cchiv.kanema.Movie;
+import com.example.cchiv.kanema.R;
 
 import java.util.ArrayList;
 
