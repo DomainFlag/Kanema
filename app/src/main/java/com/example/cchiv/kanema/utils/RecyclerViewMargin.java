@@ -9,7 +9,7 @@ public class RecyclerViewMargin extends RecyclerView.ItemDecoration {
 
     private int verticalMargin;
 
-    public RecyclerViewMargin(@IntRange (from=0) int verticalMargin) {
+    public RecyclerViewMargin(@IntRange (from = 0) int verticalMargin) {
         this.verticalMargin = verticalMargin;
     }
 

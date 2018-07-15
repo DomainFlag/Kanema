@@ -1,11 +1,11 @@
-package com.example.cchiv.kanema;
+package com.example.cchiv.kanema.objects;
 
 import java.util.ArrayList;
 import java.util.Date;
 
-public class Movie {
+public class Content {
 
-    private int initialized = 0;
+    private int state = LoadingStates.EMPTY;
 
     private int ID;
     private String title;
@@ -16,10 +16,15 @@ public class Movie {
     private ArrayList<String> genres;
     private String tagline;
 
-    public Movie() {}
+    public class LoadingStates {
+        public static final int EMPTY = 0;
+        public static final int LOADED = 1;
+    }
 
-    public Movie(int ID, String title, String posterPath, String overview, Float voteAverage, Date releaseDate) {
-        this.initialized = 1;
+    public Content() {}
+
+    public Content(int ID, String title, String posterPath, String overview, Float voteAverage, Date releaseDate) {
+        this.state = LoadingStates.LOADED;
 
         this.ID = ID;
         this.title = title;
@@ -29,8 +34,9 @@ public class Movie {
         this.releaseDate = releaseDate;
     }
 
-    public Movie(String title, String posterPath, String overview, Float voteAverage, Date releaseDate, ArrayList<String> genres, String tagline) {
-        this.initialized = 1;
+    public Content(int ID, String title, String posterPath, String overview, Float voteAverage, Date
+            releaseDate, ArrayList<String> genres, String tagline) {
+        this.state = LoadingStates.LOADED;
 
         this.ID = ID;
         this.title = title;
@@ -42,21 +48,25 @@ public class Movie {
         this.tagline = tagline;
     }
 
-    public void copy(Movie movie) {
-        this.initialized = 1;
+    public void copy(Content content) {
+        this.state = LoadingStates.LOADED;
 
-        this.setID(movie.getID());
-        this.setOverview(movie.getOverview());
-        this.setPosterPath(movie.getPosterPath());
-        this.setReleaseDate(movie.getReleaseDate());
-        this.setTitle(movie.getTitle());
-        this.setVoteAverage(movie.getVoteAverage());
-        this.setTagline(movie.getTagline());
-        this.setGenres(movie.getGenres());
+        this.setID(content.getID());
+        this.setOverview(content.getOverview());
+        this.setPosterPath(content.getPosterPath());
+        this.setReleaseDate(content.getReleaseDate());
+        this.setTitle(content.getTitle());
+        this.setVoteAverage(content.getVoteAverage());
+        this.setTagline(content.getTagline());
+        this.setGenres(content.getGenres());
     }
 
-    public int getInitialized() {
-        return initialized;
+    public boolean isLoaded() {
+        return this.state == LoadingStates.LOADED;
+    }
+
+    public int getState() {
+        return state;
     }
 
     public String getTitle() {
@@ -119,11 +129,11 @@ public class Movie {
         this.genres = genres;
     }
 
-    public void setInitialized(int initialized) {
-        this.initialized = initialized;
-    }
-
     public void setTagline(String tagline) {
         this.tagline = tagline;
+    }
+
+    public void setState(int state) {
+        this.state = state;
     }
 }

@@ -19,7 +19,7 @@ public class HTTPFetchRequest {
 
         try {
             URLConnection urlConnection = url.openConnection();
-            urlConnection.addRequestProperty("method", "GET");
+            urlConnection.addRequestProperty("Method", "GET");
             urlConnection.setConnectTimeout(15000);
             urlConnection.setReadTimeout(15000);
             urlConnection.connect();

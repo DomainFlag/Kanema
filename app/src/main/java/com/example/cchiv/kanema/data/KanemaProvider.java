@@ -1,6 +1,7 @@
 package com.example.cchiv.kanema.data;
 
 import android.content.ContentProvider;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -8,15 +9,15 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.example.cchiv.kanema.data.MovieContract.MovieEntry;
+import com.example.cchiv.kanema.data.ContentContract.ContentEntry;
 
 public class KanemaProvider extends ContentProvider {
 
-    private MovieDbHelper movieDbHelper;
+    private ContentDbHelper contentDbHelper;
 
     @Override
     public boolean onCreate() {
-        this.movieDbHelper = new MovieDbHelper(getContext());
+        this.contentDbHelper = new ContentDbHelper(getContext());
 
         return true;
     }
@@ -25,9 +26,15 @@ public class KanemaProvider extends ContentProvider {
     @Override
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection,
                         @Nullable String[] selectionArgs, @Nullable String orderBy) {
-        SQLiteDatabase sqLiteDatabase = movieDbHelper.getReadableDatabase();
+        SQLiteDatabase sqLiteDatabase = contentDbHelper.getReadableDatabase();
 
-        return sqLiteDatabase.query(MovieEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, orderBy);
+        Cursor cursor = sqLiteDatabase.query(ContentEntry.TABLE_NAME, projection, selection,
+                selectionArgs,
+                null, null, orderBy);
+
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);
+
+        return cursor;
     }
 
     @Nullable
@@ -39,18 +46,20 @@ public class KanemaProvider extends ContentProvider {
     @Nullable
     @Override
     public Uri insert(@NonNull Uri uri, @Nullable ContentValues contentValues) {
-        SQLiteDatabase sqLiteDatabase = movieDbHelper.getWritableDatabase();
+        SQLiteDatabase sqLiteDatabase = contentDbHelper.getWritableDatabase();
 
-        long inserted = sqLiteDatabase.insert(MovieEntry.TABLE_NAME, null, contentValues);
+        long insertedRows = sqLiteDatabase.insert(ContentEntry.TABLE_NAME, null, contentValues);
+        if(insertedRows != 0)
+            getContext().getContentResolver().notifyChange(uri, null);
 
-        return null;
+        return ContentUris.withAppendedId(uri, insertedRows);
     }
 
     @Override
     public int delete(@NonNull Uri uri, @Nullable String whereClause, @Nullable String[] whereArgs) {
-        SQLiteDatabase sqLiteDatabase = movieDbHelper.getWritableDatabase();
+        SQLiteDatabase sqLiteDatabase = contentDbHelper.getWritableDatabase();
 
-        int nbRowsDeleted = sqLiteDatabase.delete(MovieEntry.TABLE_NAME, whereClause, whereArgs);
+        int nbRowsDeleted = sqLiteDatabase.delete(ContentEntry.TABLE_NAME, whereClause, whereArgs);
         if(nbRowsDeleted > 0) {
             getContext().getContentResolver().notifyChange(uri, null);
         }
@@ -60,9 +69,11 @@ public class KanemaProvider extends ContentProvider {
 
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues contentValues, @Nullable String whereClause, @Nullable String[] whereArgs) {
-        SQLiteDatabase sqLiteDatabase = movieDbHelper.getWritableDatabase();
+        SQLiteDatabase sqLiteDatabase = contentDbHelper.getWritableDatabase();
 
-        int nbRowsUpdated = sqLiteDatabase.update(MovieEntry.TABLE_NAME, contentValues, whereClause, whereArgs);
+        int nbRowsUpdated = sqLiteDatabase.update(ContentEntry.TABLE_NAME, contentValues, whereClause, whereArgs);
+        if(nbRowsUpdated > 0)
+            getContext().getContentResolver().notifyChange(uri, null);
 
         return nbRowsUpdated;
     }

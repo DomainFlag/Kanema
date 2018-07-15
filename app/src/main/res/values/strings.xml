@@ -2,7 +2,7 @@
     <string name="app_name">Kanema</string>
 
     <string name="movie_layout_content_description">Movie Poster</string>
-    <string name="movie_layout_movie_title">No movie title</string>
+    <string name="movie_layout_movie_title">No content title</string>
     <string name="movie_layout_movie_date">Movie date</string>
 
 
@@ -26,7 +26,7 @@
     <string name="entertainment_series">TV Series</string>
     <string name="entertainment_starred">Starred</string>
 
-    <string name="entertainment_movies_key">movie</string>
+    <string name="entertainment_movies_key">content</string>
     <string name="entertainment_series_key">tv_series</string>
     <string name="entertainment_starred_key">starred</string>
 

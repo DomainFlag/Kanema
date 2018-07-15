@@ -1,4 +1,4 @@
-package com.example.cchiv.kanema;
+package com.example.cchiv.kanema.objects;
 
 public class Actor {
 

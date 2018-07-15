@@ -8,10 +8,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/actor_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+    </android.support.v7.widget.RecyclerView>
+
     <android.support.design.widget.AppBarLayout
         android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:padding="0dp"
+        app:contentInsetLeft="0dp"
+        app:contentInsetStart="0dp"
+        app:contentInsetStartWithNavigation="0dp"
         android:fitsSystemWindows="true">
 
         <android.support.v7.widget.Toolbar
@@ -19,12 +31,11 @@
             android:layout_width="match_parent"
             android:layout_height="300dp"
             android:background="@color/colorBackground"
-            android:paddingEnd="0dp"
-            android:paddingLeft="0dp"
-            android:paddingRight="0dp"
-            android:paddingStart="0dp"
+            android:padding="0dp"
+            android:contentInsetStart="0dp"
             app:contentInsetLeft="0dp"
             app:contentInsetStart="0dp"
+            app:contentInsetStartWithNavigation="0dp"
             app:layout_scrollFlags="scroll|enterAlwaysCollapsed|snap">
 
             <LinearLayout
@@ -33,22 +44,33 @@
                 android:orientation="vertical"
                 android:weightSum="9">
 
-                <LinearLayout
+                <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    android:layout_weight="2"
-                    android:gravity="end"
-                    android:orientation="horizontal">
+                    android:layout_weight="2">
+
+                    <ImageButton
+                        android:id="@+id/home_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:padding="@dimen/activity_margin_component"
+                        android:src="@drawable/ic_back_arrow"
+                        android:contentDescription="@string/menu_settings"
+                        android:background="?attr/selectableItemBackgroundBorderless"/>
 
                     <ImageView
                         android:id="@+id/star_content"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentRight="true"
+                        android:padding="@dimen/activity_margin_component"
                         android:contentDescription="@string/menu_item_rating"
-                        android:onClick="onClick"
                         android:src="@drawable/ic_star_faded"/>
 
-                </LinearLayout>
+                </RelativeLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -70,7 +92,9 @@
                             android:id="@+id/movie_detailed_rating"
                             style="?android:attr/ratingBarStyleSmall"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"/>
+                            android:layout_height="wrap_content"
+                            android:numStars="5"
+                            android:stepSize="0.1"/>
 
                         <TextView
                             android:id="@+id/movie_detailed_release_date"
@@ -119,13 +143,5 @@
 
 
     </android.support.design.widget.AppBarLayout>
-
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/actor_list"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-    </android.support.v7.widget.RecyclerView>
 
 </android.support.design.widget.CoordinatorLayout>

@@ -10,42 +10,50 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.cchiv.kanema.fragments.SlidePageFragment;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class MainActivity extends FragmentActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class MainActivity extends FragmentActivity {
 
-    private final static int mNbComponents = 2;
+    private final static int mNbComponents = 3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ViewPager mViewPager = (ViewPager) findViewById(R.id.viewpager_slider);
-        SliderPageAdapter mPagerAdapter = new SliderPageAdapter(this, getSupportFragmentManager());
-        mViewPager.setAdapter(mPagerAdapter);
+        SliderPageAdapter pageAdapter = new SliderPageAdapter(this, getSupportFragmentManager());
 
+        ViewPager viewPager = findViewById(R.id.viewpager_slider);
+        viewPager.setAdapter(pageAdapter);
+
+        setTabLayout(pageAdapter, viewPager);
+        setViewPagerPreferences(viewPager);
+    }
+
+    public void setTabLayout(SliderPageAdapter pageAdapter, ViewPager viewPager) {
         TabLayout tabLayout = findViewById(R.id.entertainment_tab_layout);
-        tabLayout.setupWithViewPager(mViewPager);
+        tabLayout.setupWithViewPager(viewPager);
+
         for(int it = 0; it < tabLayout.getTabCount(); it++) {
             TabLayout.Tab tab = tabLayout.getTabAt(it);
+            if(tab == null)
+                continue;
 
-            if(it == 0)
-                tab.setIcon(R.drawable.ic_movie);
-            else if(it == 1)
-                tab.setIcon(R.drawable.ic_series);
-            else tab.setIcon(R.drawable.ic_movie);
+            tab.setCustomView(pageAdapter.getTabView(it));
         }
-
-        setViewPagerPreferences(mViewPager);
-        setSharedPreferences();
     }
 
     public void setViewPagerPreferences(ViewPager mViewPager) {
@@ -58,23 +66,18 @@ public class MainActivity extends FragmentActivity implements SharedPreferences.
         mViewPager.setCurrentItem(index);
     }
 
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
-
-    }
-
     public class SliderPageAdapter extends FragmentPagerAdapter {
 
         private List<String> components;
         private Context context;
 
-        public SliderPageAdapter(Context context, FragmentManager fm) {
+        private SliderPageAdapter(Context context, FragmentManager fm) {
             super(fm);
 
             this.context = context;
 
             String[] data = this.context.getResources().getStringArray(R.array.settings_item_labels);
-            this.components = Arrays.asList(data);
+            components = Arrays.asList(data);
         }
 
         @Override
@@ -88,6 +91,24 @@ public class MainActivity extends FragmentActivity implements SharedPreferences.
             return fragment;
         }
 
+        private View getTabView(int tabPos) {
+            View view = LayoutInflater.from(context).inflate(R.layout.tab_layout, null);
+
+            ImageView tabIcon = view.findViewById(R.id.tab_icon);
+            if(tabPos == 0)
+                tabIcon.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_movie));
+            else if(tabPos == 1)
+                tabIcon.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_series));
+            else tabIcon.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_star_white));
+
+            TextView tabText = view.findViewById(R.id.tab_text);
+            tabText.setText(getPageTitle(tabPos));
+
+            Toast.makeText(context, getPageTitle(tabPos), Toast.LENGTH_LONG);
+
+            return view;
+        }
+
         @Override
         public int getCount() {
             return mNbComponents;
@@ -98,16 +119,10 @@ public class MainActivity extends FragmentActivity implements SharedPreferences.
         public CharSequence getPageTitle(int position) {
             if(position == 0)
                 return getResources().getString(R.string.entertainment_movies);
-            else return getResources().getString(R.string.entertainment_series);
+            else if(position == 1)
+                return getResources().getString(R.string.entertainment_series);
+            else return getResources().getString(R.string.entertainment_starred);
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        sharedPreferences.unregisterOnSharedPreferenceChangeListener(this);
     }
 
     @Override
@@ -116,10 +131,5 @@ public class MainActivity extends FragmentActivity implements SharedPreferences.
         menuInflater.inflate(R.menu.menu, menu);
 
         return true;
-    }
-
-    public void setSharedPreferences() {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        sharedPreferences.registerOnSharedPreferenceChangeListener(this);
     }
 }

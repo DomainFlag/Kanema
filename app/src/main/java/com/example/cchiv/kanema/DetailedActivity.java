@@ -1,14 +1,17 @@
 package com.example.cchiv.kanema;
 
 import android.app.Activity;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -18,12 +21,15 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.example.cchiv.kanema.adapters.MovieDetailsAdapter;
-import com.example.cchiv.kanema.data.MovieContract.MovieEntry;
+import com.example.cchiv.kanema.adapters.ContentDetailedAdapter;
+import com.example.cchiv.kanema.data.ContentContract.ContentEntry;
+import com.example.cchiv.kanema.objects.Actor;
+import com.example.cchiv.kanema.objects.Content;
+import com.example.cchiv.kanema.objects.Review;
+import com.example.cchiv.kanema.objects.Video;
 import com.example.cchiv.kanema.utils.Constants;
 import com.example.cchiv.kanema.utils.HTTPFetchRequest;
 import com.example.cchiv.kanema.utils.RecyclerViewMargin;
@@ -38,191 +44,297 @@ import java.util.Locale;
 
 public class DetailedActivity extends AppCompatActivity {
 
-    private final static int FETCH_ACTORS = 0;
-    private final static int FETCH_MOVIE_DETAILS = 1;
-
-    private final Movie movie = new Movie();
-    private ArrayList<Actor> actors = new ArrayList<>();
-    private MovieDetailsAdapter movieDetailsAdapter;
+    private final Content content = new Content();
+    private final ArrayList<Video> videos = new ArrayList<>();
+    private final ArrayList<Review> reviews = new ArrayList<>();
+    private final ArrayList<Actor> actors = new ArrayList<>();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.movie_detailed_layout);
+        setContentView(R.layout.content_detailed_layout);
+
+
+        /* Set ActionBar && Toolbar */
+        ActionBar actionBar = getSupportActionBar();
+        if(actionBar != null)
+            actionBar.setDisplayHomeAsUpEnabled(false);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+
+        /* Set RecyclerView */
         RecyclerView recyclerView = findViewById(R.id.actor_list);
-        recyclerView.setHasFixedSize(false);
+
         RecyclerView.ItemDecoration itemDecoration = new RecyclerViewMargin((int) getResources().getDimension(R.dimen.activity_margin_sibling));
         recyclerView.addItemDecoration(itemDecoration);
+        recyclerView.setHasFixedSize(false);
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(linearLayoutManager);
 
-        movieDetailsAdapter = new MovieDetailsAdapter(actors, movie, new MovieDetailsAdapter.OnClickActorListener() {
-            @Override
-            public void OnClickListener(int actorPosition) {
-                Toast.makeText(getParent().getBaseContext(), "---------------------", Toast
-                        .LENGTH_LONG).show();
-            }
-        }, 1);
-        recyclerView.setAdapter(movieDetailsAdapter);
+        ContentDetailedAdapter contentDetailedAdapter = new ContentDetailedAdapter(this, content, videos, reviews, actors);
+        recyclerView.setAdapter(contentDetailedAdapter);
 
 
+        /* Get Intent data && set up the UX */
         Intent intent = getIntent();
 
-        String movieIdentifier = String.valueOf(intent.getIntExtra("id", 0));
-        setTitle(intent.getStringExtra("title"));
+        String contentIdentifier = intent.getStringExtra("id");
+        String contentType = intent.getStringExtra("contentType");
 
-        fetchActors(movieIdentifier);
-        fetchMovieDetails(movieIdentifier);
+        initFetchOfData(contentDetailedAdapter, contentIdentifier, contentType);
+        setCustomOptionsSelection(contentIdentifier);
     }
 
-    public void onClick(View view) {
-        ImageView imageView = (ImageView) findViewById(R.id.star_content);
+    public void setCustomOptionsSelection(final String contentIdentifier) {
 
-        if(movie.getInitialized() != 0) {
-            imageView.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R
-                    .drawable.ic_star));
+        findViewById(R.id.home_button)
+                .setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        finish();
+                    }
+                });
 
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-mm-dd", Locale.US);
+        findViewById(R.id.star_content)
+                .setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        ImageView imageView = (ImageView) view;
 
-            ContentValues contentValues = new ContentValues();
-            contentValues.put(MovieEntry._ID, movie.getID());
-            contentValues.put(MovieEntry.COL_MOVIE_TITLE, movie.getTitle());
-            contentValues.put(MovieEntry.COL_MOVIE_GENRES,
-                    TextUtils.join(" ", movie.getGenres()));
-            contentValues.put(MovieEntry.COL_MOVIE_OVERVIEW, movie.getOverview());
-            contentValues.put(MovieEntry.COL_MOVIE_POSTER_PATH, movie.getPosterPath());
-            contentValues.put(MovieEntry.COL_MOVIE_RELEASE_DATE,
-                    simpleDateFormat.format(movie.getReleaseDate()));
-            contentValues.put(MovieEntry.COL_MOVIE_TAGLINE, movie.getTagline());
-            contentValues.put(MovieEntry.COL_MOVIE_VOTE_AVERAGE, movie.getVoteAverage());
+                        Cursor cursor = getContentResolver().query(Uri.parse("content://com.example.android.KanemaProvider"), null,
+                                ContentEntry._ID + " = " + contentIdentifier, null, null);
 
-            getContentResolver().insert(Uri.parse("content://com.example.android" +
-                    ".KanemaProvider"), contentValues);
+                        if(cursor != null && cursor.getCount() > 0) {
+                            int deletedRows = getContentResolver().delete(Uri.parse("content://com.example.android.KanemaProvider"),
+                                    ContentEntry._ID + " = " + contentIdentifier, null);
+
+                            if(deletedRows > 0)
+                                imageView.setImageDrawable(ContextCompat.getDrawable(getBaseContext(), R.drawable.ic_star_faded));
+                        } else {
+                            if(content.isLoaded()) {
+                                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-mm-dd", Locale.US);
+
+                                ContentValues contentValues = new ContentValues();
+                                contentValues.put(ContentEntry._ID, content.getID());
+                                contentValues.put(ContentEntry.COL_CONTENT_TITLE, content.getTitle());
+                                contentValues.put(ContentEntry.COL_CONTENT_GENRES,
+                                        TextUtils.join(" ", content.getGenres()));
+                                contentValues.put(ContentEntry.COL_CONTENT_OVERVIEW, content.getOverview());
+                                contentValues.put(ContentEntry.COL_CONTENT_POSTER_PATH, content.getPosterPath());
+                                contentValues.put(ContentEntry.COL_CONTENT_RELEASE_DATE,
+                                        simpleDateFormat.format(content.getReleaseDate()));
+                                contentValues.put(ContentEntry.COL_CONTENT_TAGLINE, content.getTagline());
+                                contentValues.put(ContentEntry.COL_CONTENT_VOTE_AVERAGE, content.getVoteAverage());
+
+                                Uri uri = getContentResolver().insert(Uri.parse("content://com.example.android" +
+                                        ".KanemaProvider"), contentValues);
+
+                                if(ContentUris.parseId(uri) > 0)
+                                    imageView.setImageDrawable(ContextCompat.getDrawable(getApplicationContext(), R
+                                            .drawable.ic_star));
+                            }
+                        }
+
+                        if(cursor != null)
+                            cursor.close();
+                    }
+            });
+    }
+
+    public void initFetchOfData(ContentDetailedAdapter contentDetailedAdapter, String contentIdentifier, String contentType) {
+        String contentTypePath;
+
+        setStarComponent(contentIdentifier);
+
+        if(contentType.equals(getString(R.string.entertainment_movies)))
+            contentTypePath = Constants.MOVIE;
+        else if(contentType.equals(getString(R.string.entertainment_series)))
+            contentTypePath = Constants.TV;
+        else {
+            fetchStarredContent(contentDetailedAdapter, contentIdentifier);
+            return;
+        }
+
+        fetchContent(contentDetailedAdapter, contentTypePath, contentIdentifier, null, AsyncRequest.FetchTypes.FETCH_CONTENT_DETAILS);
+        fetchContent(contentDetailedAdapter, contentTypePath, contentIdentifier, Constants.VIDEOS, AsyncRequest.FetchTypes.FETCH_VIDEOS);
+        fetchContent(contentDetailedAdapter, contentTypePath, contentIdentifier, Constants.REVIEWS, AsyncRequest.FetchTypes.FETCH_REVIEWS);
+        fetchContent(contentDetailedAdapter, contentTypePath, contentIdentifier, Constants.CREDITS, AsyncRequest.FetchTypes.FETCH_ACTORS);
+    }
+
+    public void setStarComponent(String contentIdentifier) {
+        Cursor cursor = getContentResolver().query(Uri.parse("content://com.example.android.KanemaProvider"), null,
+                ContentEntry._ID + " = " + contentIdentifier, null, null);
+
+        if(cursor != null && cursor.getCount() > 0) {
+            ImageView imageView = findViewById(R.id.star_content);
+            imageView.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_star));
+
+            cursor.close();
         }
     }
 
-    public void fetchActors(String movieIdentifier) {
-        AsyncRequest asyncRequest = new AsyncRequest(this, actors, movieDetailsAdapter, FETCH_ACTORS);
-
-        Uri.Builder builder = new Uri.Builder();
-        Uri uri = builder
-                .scheme(Constants.SCHEME)
-                .authority(Constants.AUTHORITY)
-                .appendPath(Constants.PATH_API)
-                .appendPath(Constants.MOVIE)
-                .appendPath(movieIdentifier)
-                .appendPath(Constants.CREDITS)
-                .appendQueryParameter(Constants.API_KEY, Constants.API_KEY_VALUE)
-                .build();
-
+    public void fetchContent(ContentDetailedAdapter contentDetailedAdapter, String contentType,
+                             String contentIdentifier, String contentFeature, int fetchType) {
         try {
-            URL url = new URL(uri.toString());
+            Uri.Builder builder =  new Uri.Builder()
+                    .scheme(Constants.SCHEME)
+                    .authority(Constants.AUTHORITY)
+                    .appendPath(Constants.PATH_API)
+                    .appendPath(contentType)
+                    .appendPath(contentIdentifier);
 
-            asyncRequest.execute(url);
+            if(contentFeature != null)
+                builder
+                        .appendPath(contentFeature);
+
+            Uri uri = builder
+                    .appendQueryParameter(Constants.API_KEY, Constants.API_KEY_VALUE)
+                    .build();
+
+            AsyncRequest asyncRequest = new AsyncRequest(this, contentDetailedAdapter,
+                    fetchType);
+            asyncRequest.execute(new URL(uri.toString()));
+
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
     }
 
-    public void fetchMovieDetails(String movieIdentifier) {
-        AsyncRequest asyncRequest = new AsyncRequest(this, movie, movieDetailsAdapter, FETCH_MOVIE_DETAILS);
+    public void fetchStarredContent(ContentDetailedAdapter contentDetailedAdapter, String contentIdentifier) {
 
-        Uri.Builder builder = new Uri.Builder();
-        Uri uri = builder
-                .scheme(Constants.SCHEME)
-                .authority(Constants.AUTHORITY)
-                .appendPath(Constants.PATH_API)
-                .appendPath(Constants.MOVIE)
-                .appendPath(movieIdentifier)
-                .appendQueryParameter(Constants.API_KEY, Constants.API_KEY_VALUE)
-                .appendQueryParameter(Constants.LANGUAGE, Constants.LANGUAGE_VALUE)
-                .build();
+        String[] projection = {
+                ContentEntry._ID,
+                ContentEntry.COL_CONTENT_TITLE,
+                ContentEntry.COL_CONTENT_POSTER_PATH,
+                ContentEntry.COL_CONTENT_OVERVIEW,
+                ContentEntry.COL_CONTENT_VOTE_AVERAGE,
+                ContentEntry.COL_CONTENT_RELEASE_DATE,
+                ContentEntry.COL_CONTENT_GENRES,
+                ContentEntry.COL_CONTENT_TAGLINE
+        };
 
-        try {
-            URL url = new URL(uri.toString());
+        Cursor cursor = getContentResolver().query(Uri.parse("content://com.example.android.KanemaProvider"), projection,
+                ContentEntry._ID + " = " + contentIdentifier, null, null);
 
-            asyncRequest.execute(url);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+        fillStarredContent(cursor);
+
+        contentDetailedAdapter.swapCursor(cursor);
+        contentDetailedAdapter.notifyDataSetChanged();
     }
 
-    public static class AsyncRequest extends AsyncTask<URL, Void, Boolean> {
+    public void fillStarredContent(Cursor cursor) {
+        if(!cursor.moveToFirst())
+            return;
+
+        int posterPathIndex = cursor.getColumnIndexOrThrow(ContentEntry.COL_CONTENT_POSTER_PATH);
+        int voteAverageIndex = cursor.getColumnIndexOrThrow(ContentEntry.COL_CONTENT_VOTE_AVERAGE);
+        int releaseDateIndex = cursor.getColumnIndexOrThrow(ContentEntry.COL_CONTENT_RELEASE_DATE);
+        int genresIndex = cursor.getColumnIndexOrThrow(ContentEntry.COL_CONTENT_GENRES);
+
+        Glide
+                .with(this)
+                .load(cursor.getString(posterPathIndex))
+                .apply(new RequestOptions()
+                        .placeholder(R.drawable.empty_package)
+                        .error(R.drawable.empty_package))
+                .into((ImageView) findViewById(R.id.movie_detailed_poster));
+
+        RatingBar ratingBar = findViewById(R.id.movie_detailed_rating);
+        ratingBar.setRating(Float.valueOf(cursor.getString(voteAverageIndex)));
+
+        TextView textView = findViewById(R.id.movie_detailed_release_date);
+        textView.setText(cursor.getString(releaseDateIndex));
+
+        textView = findViewById(R.id.movie_detailed_genres);
+        textView.setText(TextUtils.join("\n\n", new String[] { cursor.getString(genresIndex) }));
+    };
+
+    public class AsyncRequest extends AsyncTask<URL, Void, Boolean> {
+
+        private class FetchTypes {
+            private final static int nbMaxTypes = 4;
+
+            private final static int FETCH_CONTENT_DETAILS = 0;
+            private final static int FETCH_VIDEOS = 1;
+            private final static int FETCH_REVIEWS = 2;
+            private final static int FETCH_ACTORS = 3;
+        }
 
         private WeakReference<Context> context;
-
-        private HTTPFetchRequest httpFetchRequest;
-        private ResponseParser responseParser;
-
-        private final static int FETCH_ACTORS = 0;
-        private final static int FETCH_MOVIE_DETAILS = 1;
-
+        private ContentDetailedAdapter contentDetailedAdapter;
         private int fetchType;
 
-        private MovieDetailsAdapter movieDetailsAdapter;
-        private ArrayList<Actor> actors;
-
-        private Movie movie;
-
-        private AsyncRequest(Context context, MovieDetailsAdapter movieDetailsAdapter, int fetchType) {
+        private AsyncRequest(Context context, ContentDetailedAdapter contentDetailedAdapter, int
+                fetchType) {
             this.context = new WeakReference<>(context);
-            this.movieDetailsAdapter = movieDetailsAdapter;
+            this.contentDetailedAdapter = contentDetailedAdapter;
             this.fetchType = fetchType;
-
-            this.httpFetchRequest = new HTTPFetchRequest();
-            this.responseParser = new ResponseParser();
         }
-
-        private AsyncRequest(Context context, ArrayList<Actor> actors, MovieDetailsAdapter movieDetailsAdapter, int fetchType) {
-            this(context, movieDetailsAdapter, fetchType);
-
-            this.actors = actors;
-        }
-
-        private AsyncRequest(Context context, Movie movie, MovieDetailsAdapter movieDetailsAdapter, int fetchType) {
-            this(context, movieDetailsAdapter, fetchType);
-
-            this.movie = movie;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
 
         @Override
         protected Boolean doInBackground(URL... urls) {
-            if(urls.length == 0)
+
+            /* Checking for url availability and valid fetchType operation */
+            if(urls.length == 0 && (this.fetchType < 0 || this.fetchType > FetchTypes.nbMaxTypes))
                 return null;
 
-            if(this.fetchType != FETCH_ACTORS && this.fetchType != FETCH_MOVIE_DETAILS)
-                return null;
 
-            StringBuilder result = httpFetchRequest.fetchFromURL(urls[0]);
+            StringBuilder result = new HTTPFetchRequest().fetchFromURL(urls[0]);
+            ResponseParser responseParser = new ResponseParser();
+            switch(this.fetchType) {
+                case FetchTypes.FETCH_CONTENT_DETAILS : {
+                    Content fetchedContent = responseParser.parseContentDetails(result);
 
-            if(this.fetchType == FETCH_ACTORS) {
-                ArrayList<Actor> fetchedActors = responseParser.parseActorList(result);
+                    if(fetchedContent != null) {
+                        content.copy(fetchedContent);
 
-                if(fetchedActors.size() != 0) {
-                    this.actors.clear();
-                    this.actors.addAll(fetchedActors);
+                        return true;
+                    }
 
-                    return true;
+                    break;
                 }
-            } else {
-                Movie newMovie = responseParser.parseMovieDetails(result);
+                case FetchTypes.FETCH_VIDEOS : {
+                    ArrayList<Video> fetchedContent = responseParser.parseVideoList(result);
 
-                if(newMovie != null) {
-                    this.movie.copy(newMovie);
+                    if(fetchedContent != null && fetchedContent.size() > 0) {
+                        videos.clear();
+                        videos.addAll(fetchedContent);
 
-                    return true;
+                        return true;
+                    }
+
+                    break;
+                }
+                case FetchTypes.FETCH_REVIEWS : {
+                    ArrayList<Review> fetchedContent = responseParser.parseReviewList(result);
+
+                    if(fetchedContent != null && fetchedContent.size() > 0) {
+                        reviews.clear();
+                        reviews.addAll(fetchedContent);
+
+                        return true;
+                    }
+
+                    break;
+                }
+                case FetchTypes.FETCH_ACTORS : {
+                    ArrayList<Actor> fetchedContent = responseParser.parseActorList(result);
+
+                    if(fetchedContent.size() != 0 && fetchedContent.size() > 0) {
+                        actors.clear();
+                        actors.addAll(fetchedContent);
+
+                        return true;
+                    }
+
+                    break;
+                }
+                default : {
+                    // throw new IllegalArgumentException("Unknown fetch operation type");
+                    return false;
                 }
             }
 
@@ -230,53 +342,51 @@ public class DetailedActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(Boolean wasUpdated) {
-            super.onPostExecute(wasUpdated);
+        protected void onPostExecute(Boolean contentWasUpdated) {
+            super.onPostExecute(contentWasUpdated);
 
-            Activity activity = (Activity) this.context.get();
-            RatingBar ratingBar = activity.findViewById(R.id.movie_detailed_rating);
+            Context context = this.context.get();
+
+            /* Activity' context is lost */
+            if(context == null)
+                return;
+
+            Activity activity = (Activity) context;
 
             /* In case the data wasn't updated no need to go further */
-            if(!wasUpdated) {
+            if(!contentWasUpdated) {
                 Glide
-                        .with(this.context.get())
+                        .with(context)
                         .load(R.drawable.empty_package)
                         .into((ImageView) activity.findViewById(R.id.movie_detailed_poster));
+            } else {
 
-                ratingBar.setVisibility(View.GONE);
+                if(fetchType == FetchTypes.FETCH_CONTENT_DETAILS) {
+                    String contentPosterPath = content.getPosterPath();
 
-                return;
-            }
-
-            if(this.fetchType != FETCH_ACTORS && this.fetchType != FETCH_MOVIE_DETAILS)
-                return;
-
-            if(this.fetchType == FETCH_MOVIE_DETAILS) {
-                if(this.context != null) {
                     Glide
-                            .with(this.context.get())
-                            .load(this.movie.getPosterPath())
+                            .with(context)
+                            .load(contentPosterPath)
                             .apply(new RequestOptions()
-                                .placeholder(R.drawable.empty_package)
-                                .error(R.drawable.empty_package))
+                                    .placeholder(R.drawable.empty_package)
+                                    .error(R.drawable.empty_package))
                             .into((ImageView) activity.findViewById(R.id.movie_detailed_poster));
 
-                    ratingBar.setNumStars(5);
-                    ratingBar.setMax(5);
-                    ratingBar.setRating(this.movie.getVoteAverage());
-                    ratingBar.setVisibility(View.VISIBLE);
+                    RatingBar ratingBar = activity.findViewById(R.id.movie_detailed_rating);
+                    ratingBar.setRating(content.getVoteAverage());
 
                     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
                     TextView textView = activity.findViewById(R.id.movie_detailed_release_date);
-                    textView.setText(simpleDateFormat.format(this.movie.getReleaseDate()));
+                    textView.setText(simpleDateFormat.format(content.getReleaseDate()));
 
                     TextView textView1 = activity.findViewById(R.id.movie_detailed_genres);
-                    ArrayList<String> genres = this.movie.getGenres();
-                    textView1.setText(TextUtils.join("\n", genres));
+                    ArrayList<String> genres = content.getGenres();
+                    textView1.setText(TextUtils.join("\n\n", genres));
                 }
-            }
 
-            this.movieDetailsAdapter.notifyDataSetChanged();
+                /* No need to check other fetch types as the adapters they reside in are automatically notified & refreshed */
+                contentDetailedAdapter.notifyDataSetChanged();
+            }
         }
     }
 }

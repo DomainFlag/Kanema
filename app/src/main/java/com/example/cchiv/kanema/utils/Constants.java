@@ -6,13 +6,16 @@ public class Constants {
     public final static String PATH_API = "3";
 
     public final static String API_KEY =  "api_key";
-    public final static String API_KEY_VALUE = "API&KEY";
+    public final static String API_KEY_VALUE = "df8d6e4f363b5e022083e3e093bb4ebc";
     public final static String LANGUAGE =  "language";
     public final static String LANGUAGE_VALUE = "en-US";
 
     public final static String MOVIE = "movie";
     public final static String TV = "tv";
     public final static String STARRED = "starred";
+
+    public final static String REVIEWS = "reviews";
+    public final static String VIDEOS = "videos";
     public final static String CREDITS = "credits";
 
     public final static String FILTER_BY_POPULARITY = "popular";
