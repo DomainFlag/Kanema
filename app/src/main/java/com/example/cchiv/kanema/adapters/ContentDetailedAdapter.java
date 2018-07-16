@@ -1,7 +1,10 @@
 package com.example.cchiv.kanema.adapters;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -59,7 +62,6 @@ public class ContentDetailedAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         LayoutInflater layoutInflater = LayoutInflater
                 .from(this.context);
 
-        View view;
         if(viewType == ViewTypes.HEADER_VIEW)
             return new ContentViewHolder(
                     layoutInflater
@@ -71,14 +73,13 @@ public class ContentDetailedAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                             .inflate(R.layout.actor_layout, parent, false)
             );
         else if(viewType == ViewTypes.REVIEW_VIEW)
-            return new ContentViewHolder(
+            return new ReviewViewHolder(
                     layoutInflater
                             .inflate(R.layout.review_layout, parent, false)
             );
-        else
-            return new ContentViewHolder(
-                    layoutInflater
-                            .inflate(R.layout.video_layout, parent, false)
+        else return new VideoViewHolder(
+                layoutInflater
+                        .inflate(R.layout.video_layout, parent, false)
             );
     }
 
@@ -87,24 +88,23 @@ public class ContentDetailedAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     private boolean checkIfActorView(int position) {
-        return (actors.size() > 0 && (getHeaderViews() + videos.size() + reviews.size()) > position);
+        return (actors.size() > 0 && (getHeaderViews() + videos.size() + reviews.size()) <= position);
     }
 
     private boolean checkIfReviewView(int position) {
         int minBoundary = getHeaderViews() + videos.size();
         int maxBoundary = minBoundary + reviews.size();
-        return (reviews.size() > 0 && (position > minBoundary && position < maxBoundary));
+        return (reviews.size() > 0 && (position >= minBoundary && position < maxBoundary));
     }
 
     private boolean checkIfVideoView(int position) {
         int minBoundary = getHeaderViews();
         int maxBoundary = minBoundary + videos.size();
-        return (videos.size() > 0 && (position > minBoundary && position < maxBoundary));
+        return (videos.size() > 0 && (position >= minBoundary && position < maxBoundary));
     }
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-
         if(position == 0 && (content.isLoaded() || cursor != null))
             onBindContentDetails((ContentViewHolder) holder);
         // Take into account the other View as it fills space too when loaded up
@@ -112,8 +112,9 @@ public class ContentDetailedAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             onBindVideo((VideoViewHolder) holder, position - getHeaderViews());
         } else if(checkIfReviewView(position))
             onBindReview((ReviewViewHolder) holder, position - getHeaderViews() - videos.size());
-        else if(checkIfActorView(position))
+        else if(checkIfActorView(position)) {
             onBindActor((ActorViewHolder) holder, position - getHeaderViews() - videos.size() - reviews.size());
+        }
     }
 
     private void onBindContentDetails(ContentViewHolder holder) {
@@ -144,13 +145,27 @@ public class ContentDetailedAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     private void onBindVideo(VideoViewHolder holder, int position) {
         if(cursor == null) {
-            Video video = videos.get(position);
+            final Video video = videos.get(position);
 
             holder.videoName.setText(video.getName());
 
+            holder.videoThumbnail.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent appIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("vnd.youtube:" + video.getKey()));
+                    Intent webIntent = new Intent(Intent.ACTION_VIEW,
+                            Uri.parse("http://www.youtube.com/watch?v=" + video.getKey()));
+                    try {
+                        context.startActivity(appIntent);
+                    } catch (ActivityNotFoundException ex) {
+                        context.startActivity(webIntent);
+                    }
+                }
+            });
+
             Glide
                     .with(holder.itemView.getContext())
-                    .load(video.getKey())
+                    .load("https://i1.ytimg.com/vi/" + video.getKey() + "/0.jpg")
                     .into(holder.videoThumbnail);
         }
     }

@@ -6,7 +6,7 @@ public class Constants {
     public final static String PATH_API = "3";
 
     public final static String API_KEY =  "api_key";
-    public final static String API_KEY_VALUE = "df8d6e4f363b5e022083e3e093bb4ebc";
+    public final static String API_KEY_VALUE = "YOUR&KEY&HERE";
     public final static String LANGUAGE =  "language";
     public final static String LANGUAGE_VALUE = "en-US";
 
