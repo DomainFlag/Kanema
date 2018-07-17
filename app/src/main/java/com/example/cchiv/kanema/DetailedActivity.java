@@ -54,7 +54,6 @@ public class DetailedActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.content_detailed_layout);
 
-
         /* Set ActionBar && Toolbar */
         ActionBar actionBar = getSupportActionBar();
         if(actionBar != null)

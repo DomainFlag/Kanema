@@ -7,25 +7,24 @@ import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.cchiv.kanema.fragments.SlidePageFragment;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class MainActivity extends FragmentActivity {
+public class MainActivity extends AppCompatActivity {
 
     private final static int mNbComponents = 3;
 
@@ -103,8 +102,6 @@ public class MainActivity extends FragmentActivity {
 
             TextView tabText = view.findViewById(R.id.tab_text);
             tabText.setText(getPageTitle(tabPos));
-
-            Toast.makeText(context, getPageTitle(tabPos), Toast.LENGTH_LONG);
 
             return view;
         }
